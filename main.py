@@ -1,168 +1,221 @@
 import discord
 import os
 from discord.ext import commands
-import smtplib
-import time
-from email.mime.text import MIMEText
-from uuid import uuid4
-from replit import db
+import verificationBot
+import warningBot
+import aiofiles
+import rolesBot
 
+#bot = discord.Client()
 
-client = discord.Client()
-bot = commands.Bot(command_prefix="-")
+bot = commands.Bot(command_prefix="$")
 TOKEN = os.environ['TOKEN']
+bot.warnings = {} # guild_id : {member_id: [count, [(admin_id, reason)]]}
+#badWordList = ['cock', 'deepthroat', 'dick', 'cumshot','fuck', 'sperm', 'jerk off', 'ass', 'tits', 'fingering', 'masturbate', 'bitch', 'blowjob', 'prostitute', 'bullshit', 'dumbass', 'dickhead', 'pussy', 'piss', 'asshole', 'erection', 'foreskin', 'gag', 'handjob', 'licking', 'nude', 'penis', 'porn', 'viagra', 'virgin', 'vagina', 'vulva', 'wet dream', 'threesome', 'orgy', 'bdsm', 'hickey', 'condom', 'sexting', 'squirt', 'testicles', 'anal', 'bareback', 'bukkake', 'creampie', 'stripper', 'strap-on', 'missionary', 'clitoris', 'cock ring', 'fleshlight', 'butt plug', 'moan', 'wank', 'sucking', 'scissoring', 'slut', 'cumming', 'faggot', 'anus']
+badWordList = ['abcdcba']
+bot.remove_command('help')
 
-StudentEmails = 'student.hogent.be'
-LectorEmails = 'hogent.be'
-
-
-@client.event
+@bot.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
+    for guild in bot.guilds:
+        bot.warnings[guild.id] = {}
+        
+        async with aiofiles.open(f"{guild.id}.txt", mode="a") as temp:
+            pass
 
+        async with aiofiles.open(f"{guild.id}.txt", mode="r") as file:
+            lines = await file.readlines()
+
+            for line in lines:
+                data = line.split(" ")
+                member_id = int(data[0])
+                admin_id = int(data[1])
+                reason = " ".join(data[2:]).strip("\n")
+
+                try:
+                    bot.warnings[guild.id][member_id][0] += 1
+                    bot.warnings[guild.id][member_id][1].append((admin_id, reason))
+
+                except KeyError:
+                    bot.warnings[guild.id][member_id] = [1, [(admin_id, reason)]] 
+    
+    print(bot.user.name + " is ready.")
+
+@bot.event
+async def on_guild_join(guild):
+    bot.warnings[guild.id] = {}
+
+
+
+
+
+##Bot 1: Verification, $hey $student $verify $bugs $help verificationBot
 
 ##what did you message me??
-@client.event
-async def on_message(message):
-    if message.author == client:
-        return
+@bot.command()
+async def hey(ctx):
+  await verificationBot.hey(ctx)
 
-    if message.content.startswith('-hey'):
-      await sendVerifMessage(message)
-        
-
-    if message.content.startswith('-student'):
-        await sendmail(message)
-
-        ##check if the given token is the correct token
-    if message.content.startswith('-verify'):
-        await verify(message)
-
-    if message.content. __eq__('-help'):
-        
-        await message.channel.send('Hi there! I am the verification bot. I can verify wether you are a student or a lector at HOGENT. To get more details, please send the message  -help student  or  -help lector  . If you have any problems, bugs, or tips, use the command -bugs. Hope this helps!')
-        
-    if message.content.startswith('-bugs'):
-        myid = '<@496641850443169801>'
-        await message.channel.send('If you have encountered a bug or problem with the bot, please send ' + myid +' a private message, or any other mod in the server. ')
-    if message.content.startswith('-help student'):
-        await sendhelp(message)
-
-    if message.content.startswith('-help lector'):
-        await sendhelplector(message)
-        
-async def sendVerifMessage(message):
-    botmessage = await message.channel.send(
-    'I have sent you a private message to verify your account')
-    await message.delete()
-    await message.author.send(
-        "To verify that you are a student, please give us your school email. The way to do is, is to send me a message like this: -student youremail@school.be"
+@bot.command()
+async def explain(ctx, topic):
+  if topic.__eq__('verificatie'):
+    await ctx.channel.send(
+        'Hallo! Ik ben de IT Bot van de TI server. Ik kan verifieren of je student of medewerker bent bij HOGENT. Om aan het verificatieproces te beginnen kan je in dit kanaal $hey sturen. Als je problemen of bugs tegenkomt, gebruik dan het commando $bugs voor meer uitleg. Hopelijk helpt dit!'
     )
-    time.sleep(5)
-    await botmessage.delete()
+
+  if topic.__eq__('warnings'):
+    await ctx.channel.send('Hallo! Ik ben de IT Bot van de TI server. Ik kan ervoor zorgen dat er warnings worden gestuurd naar bepaalde mensen. Stuur het bericht ')
+
+@bot.command()
+async def verify(ctx, token):
+  ##check if the given token is the correct token
+  await verificationBot.verify(ctx, bot, token)
+
+@bot.command()
+async def student(ctx, email):
+  await verificationBot.sendmail(ctx, email)
+
+  """"
+    if message.content.startswith('$bugs'):
+      await message.author.send(
+			  'Herhaal $bugs in het juiste kanaal in de TI server, daar kan ik je verder helpen!'
+			)"""
 
 
-async def verify(message):
-    possibleToken = message.content.split(' ')[1]
-    student = message.author.name
-    tokenName = student+'_Token'
-    print(tokenName)
-    Token = db[tokenName]
-    if (possibleToken == Token):
-        member = message.author
-        role = discord.utils.get(message.guild.roles, name="Student")
-        await member.add_roles(role)
-        botmessage = await message.channel.send('You are verified as a student now! Check your roles!')
-    else:
-      botmessage = await message.channel.send('Something went wrong! Did you copy the wrong Token?')
-    await message.delete()
-    time.sleep(5)
-    await botmessage.delete()
+@bot.command()
+async def bugs(ctx):
+  print('test')
+  myid = '<@&853247302625001482>'
+  channel = '<#773873688528289823>'
+  return await ctx.send(
+      'Ben je een bug of probleem tegengekomen met de bot, laat het ons dan zeker weten in '
+      + channel +
+      ' of als het echt dringend is kan je een van onze ' + myid +
+      ' een privébericht sturen')
 
-async def sendmail(message):
-    sendmail(message)
-    ##get the email school type
-    schoolType = message.content.split('@')[1]
-    ##If the email is any other email than the accepted school emails
-    if schoolType == StudentEmails:
-        ##Get email
-        sender = 'tidiscordserver@gmail.com'
-        Email = message.content.split(' ')[1]
+  
+##Bot 2: Warnings, $warn [MEMBER] [REASON], $Warnings [PERSON]
+  ##Also included is a messagereader that autoresponds to messages with words from the bad word list :)
 
-        ##build email
-        receiver = Email
-        bodySend = await buildBody(message.author.name)
-        msg = MIMEText(bodySend)
-        msg['Subject'] = 'Student verification'
-        msg['From'] = sender
-        msg['To'] = receiver
-        msg['Content-Type'] = 'text/plain'
-
-        ##sendmail
-        s = smtplib.SMTP_SSL(host='smtp.gmail.com', port=465)
-        s.login(user=sender, password=os.getenv('GMAILPASS'))
-        s.sendmail(sender, receiver, msg.as_string())
-        s.quit()
-        await message.author.send('We have sent you an email. Please remember to check your junk folder!')
-    if schoolType == LectorEmails:
-        sender = 'tidiscordserver@gmail.com'
-        Email = message.content.split(' ')[1]
-
-        ##build email
-        receiver = Email
-        bodySend = await buildLectorBody(message.author.name)
-        msg = MIMEText(bodySend)
-        msg['Subject'] = 'Student verification'
-        msg['From'] = sender
-        msg['To'] = receiver
-        msg['Content-Type'] = 'text/plain'
-
-        ##sendmail
-        s = smtplib.SMTP_SSL(host='smtp.gmail.com', port=465)
-        s.login(user=sender, password=os.getenv('GMAILPASS'))
-        s.sendmail(sender, receiver, msg.as_string())
-        s.quit()
-        await message.author.send('We have sent you an email. Please remember to check your junk folder!')
-    else:
-        await message.author.send('This is not a HOGENT school email. Please check that you sent me your HOGENT email.')
-
-
-async def createToken(user):
-    ##create unique token to verify
-    studentToken = uuid4()
-    keyName = user+'_Token'
-    db[keyName] = studentToken.__str__()
-    return studentToken
-
-
-async def createLectorToken(user):
-    lectorToken = uuid4()+'l'
-    keyName = user+'_Token'
-    db[keyName] = lectorToken.__str__()
-    return lectorToken
-
-async def buildLectorBody(user):
-    Token = await createLectorToken(user)
-    body = """Hey there! \n\nWe're very pleased to hear that you are trying to verify that you are a lector or employee at HOGENT. To finish the verification, please copy the token and send it back to the bot in the TI server channel verification \n\n\tToken: """ + Token.__str__() + """\n\nPlease send the message in the following way in the channel Verification in the TI server;\n\n\t-verify [TOKEN] \n\nPlease do not share your Token with anybody! Thank you so much for your cooperation and hopefully we'll see you in the server!!\nGreetings, TI Bot :)"""
-
-    return body
+##warns a certain member for a certain reason
+@bot.command()
+async def warn(ctx, channel: discord.TextChannel=None, member: discord.Member=None, *, reason=None):
+  await warningBot.warn(ctx, bot, channel, member, reason)
+        
     
+##Gives all the warnings a certain member has had
+@bot.command()
+async def warnings(ctx, member:discord.Member=None):
+  await warningBot.warnings(ctx, bot, member)
+
+@bot.command()
+async def deleteWarning(ctx, member:discord.Member=None, *, reason=None):
+  await warningBot.deleteWarning(ctx, bot, reason, member)
+
+@bot.command()
+async def clearWarnings(ctx, member:discord.Member=None):
+  await warningBot.clearWarnings(ctx, bot, member)
+
+@bot.command()
+async def help(ctx, bot):
+  if(bot.__eq__("warningBot")):
+    await warningBot.help(ctx)
+  if(bot.__eq__("verificationBot")):
+    await verificationBot.help(ctx)
+
+##BOT 3: ROLES
+@bot.command()
+async def newRoleMessage(ctx):
+  rolesBot.addNewRolesMessage(ctx)
+
+@bot.command(name='numgame')
+async def numgame(ctx):
+  ##Get the chosen channel
+    await ctx.send('Hey there! Please send me in which channel you want the message to be in.')
+    msg = await bot.wait_for('message', timeout=30)
+    #bot.get_channel(logChannelId)
+    chosenChannel = bot.get_channel(int(msg.content.split('#')[1].split('>')[0]))
+    print(chosenChannel)
+
+##Get the chosen title and description of a the message.
+    await ctx.send('Fantastisch. Stuur nu je titel en beschrijving door van je bericht op de volgende manier: titel | beschrijving')
+    msg = await bot.wait_for('message', timeout=30)
+    titDescr = msg.content.split('|')
+    chosenTitel = titDescr[0]
+    chosenDescription = titDescr[1]
+
+##now await the right emojis and roles
+
+
+
+
+##save everything
+    await ctx.send('Super! Geef nu alle rollen die moeten toegevoegd worden aan het bericht. Doe dit op de volgende manier -> Stuur mij de naam van de rol en reageer het juiste emoji op je bericht. Eens je klaar bent stuur done ')
+    roles = []
+    while not msg.content.__eq__("done"):
+
+      def check(message):
+        message.author == ctx.message.author and message.channel == ctx.channel
+      
+      msg = await bot.wait_for('message', check = check, timeout=30)
+
+      
+      if(msg.content.lower().__eq__("done")):
+        break
+
+      try:
+        reaction, user = await bot.wait_for('reaction_add', timeout=15.0)
+        print(reaction)
+      except:
+        await ctx.send('👎')
+
+      
+      else:
+        roleMessage = []
+        roleMessage.append(reaction)
+        roleMessage.append(msg)
+        roles.append(roleMessage)
+      print(roles)
+
+    print('out of while')
+
+    embed = discord.Embed(title = chosenTitel, description = chosenDescription, colour = discord.Colour.green())
+
+    message = await chosenChannel.send(embed = embed)
     
-async def buildBody(user):
-    ##build the main body
-    Token = await createToken(user)
+    for word in roles:
+      (reaction, role) = (word)
+      await message.add_reaction(reaction)
+      async with aiofiles.open(f"{message.id}.txt", mode="a") as file:
+          await file.write(f"{reaction.emoji} {role}\n")
 
-    body = """Hey there! \n\nWe're very pleased to hear that you are trying to verify that you are a student. To finish the verification, please copy the token and send it back to the bot in the TI server channel verification \n\n\tToken: """ + Token.__str__() + """\n\nPlease send the message in the following way in the channel Verification in the TI server;\n\n\t-verify [TOKEN] \n\nThank you so much for your cooperation and hopefully we'll see you in the server!!\nGreetings, TI Bot :)"""
+##AUTOWARNINGS
+@bot.event
+async def on_message(message):
+    if message.author == bot:
+        return
+    else:
+      try:
+        wordsInMessage = message.content.lower().split(' ')
+        print(message.content)
+        for messageWord in wordsInMessage:
+          for word in badWordList:
+            if word.__eq__(messageWord):
+              print(word)
+              print(messageWord)
+              await message.reply(f'{message.author.mention}, je hebt een woord gebruikt van de Bad Word List. Het is niet toegestaan om dit woord te gebruiken, daarom krijg je een warning. Denk je dat dit bericht een bug is, type $bugs.')
+              await warningBot.warn(message, bot, message.channel, message.author, "Taalgebruik")
+      except KeyError:
+        await message.channel.send()
+      await bot.process_commands(message)
 
-    return body
+@warn.error
+async def clear_error(ctx, error):
+    await ctx.channel.send("Oeps! Er liep iets mis. Heb je het bericht juist gestuurd? $warn [CHANNEL] [MEMBER] [REASON]")
 
-async def sendhelp(message):
-    await message.channel.send('Hey there! I am the verification bot. I have been built to verify if you are a student at HOGENT. To do this I follow the next steps:\n\nFirst you text me -hey . \nThen i send you a private message\nAfter that you send me your school email and after THAT i send you an email with a token. \nThis is your unique token, and when you send it back to me i know that you are the one who got the email. That way i can verify that you are a student! \n\nHope this helps!')
-
-async def sendhelplector(message):
-    await message.channel.send('Hey there! I am the verification bot. I have been built to verify if you are a lector (or employee) at HOGENT. To do this I follow the next steps:\n\nFirst you text me -hey . \nThen i send you a private message\nAfter that you send me your HOGENT email and after THAT i send you an email with a token. \nThis is your unique token, and when you send it back to me i know that you are the one who got the email. That way i can verify that you are a lector! \n\nHope this helps!')
-
-
+@deleteWarning.error
+async def delW_error(ctx, error):
+    await ctx.channel.send("Oeps! Er liep iets mis. Heb je het bericht juist gestuurd? $deleteWarning [MEMBER] [REASON]")
 
 
-client.run(TOKEN)
+bot.run(TOKEN)
