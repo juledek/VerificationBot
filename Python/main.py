@@ -1,10 +1,10 @@
 import discord
 import os
 from discord.ext import commands
-import VerificationBot
-import WarningBot
+import verificationBot
+import warningBot
 import aiofiles
-import RolesBot
+import rolesBot
 
 #bot = discord.Client()
 
@@ -14,7 +14,6 @@ bot.warnings = {} # guild_id : {member_id: [count, [(admin_id, reason)]]}
 #badWordList = ['cock', 'deepthroat', 'dick', 'cumshot','fuck', 'sperm', 'jerk off', 'ass', 'tits', 'fingering', 'masturbate', 'bitch', 'blowjob', 'prostitute', 'bullshit', 'dumbass', 'dickhead', 'pussy', 'piss', 'asshole', 'erection', 'foreskin', 'gag', 'handjob', 'licking', 'nude', 'penis', 'porn', 'viagra', 'virgin', 'vagina', 'vulva', 'wet dream', 'threesome', 'orgy', 'bdsm', 'hickey', 'condom', 'sexting', 'squirt', 'testicles', 'anal', 'bareback', 'bukkake', 'creampie', 'stripper', 'strap-on', 'missionary', 'clitoris', 'cock ring', 'fleshlight', 'butt plug', 'moan', 'wank', 'sucking', 'scissoring', 'slut', 'cumming', 'faggot', 'anus']
 badWordList = ['abcdcba']
 bot.remove_command('help')
-logChannelId = 855123222037790730
 
 @bot.event
 async def on_ready():
@@ -50,12 +49,12 @@ async def on_guild_join(guild):
 
 
 
-##Bot 1: Verification, $hey $student $verify $bugs $help VerificationBot
+##Bot 1: Verification, $hey $student $verify $bugs $help verificationBot
 
 ##what did you message me??
 @bot.command()
 async def hey(ctx):
-  await VerificationBot.hey(ctx)
+  await verificationBot.hey(ctx)
 
 @bot.command()
 async def explain(ctx, topic):
@@ -70,11 +69,11 @@ async def explain(ctx, topic):
 @bot.command()
 async def verify(ctx, token):
   ##check if the given token is the correct token
-  await VerificationBot.verify(ctx, bot, token)
+  await verificationBot.verify(ctx, bot, token)
 
 @bot.command()
 async def student(ctx, email):
-  await VerificationBot.sendmail(ctx, email)
+  await verificationBot.sendmail(ctx, email)
 
   """"
     if message.content.startswith('$bugs'):
@@ -101,43 +100,39 @@ async def bugs(ctx):
 ##warns a certain member for a certain reason
 @bot.command()
 async def warn(ctx, channel: discord.TextChannel=None, member: discord.Member=None, *, reason=None):
-  await WarningBot.warn(ctx, bot, channel, member, reason)
+  await warningBot.warn(ctx, bot, channel, member, reason)
         
     
 ##Gives all the warnings a certain member has had
 @bot.command()
 async def warnings(ctx, member:discord.Member=None):
-  await WarningBot.warnings(ctx, bot, member)
+  await warningBot.warnings(ctx, bot, member)
 
 @bot.command()
 async def deleteWarning(ctx, member:discord.Member=None, *, reason=None):
-  await WarningBot.deleteWarning(ctx, bot, reason, member)
+  await warningBot.deleteWarning(ctx, bot, reason, member)
 
 @bot.command()
 async def clearWarnings(ctx, member:discord.Member=None):
-  await WarningBot.clearWarnings(ctx, bot, member)
+  await warningBot.clearWarnings(ctx, bot, member)
 
 @bot.command()
 async def help(ctx, bot):
-  if(bot.__eq__("WarningBot")):
-    await WarningBot.help(ctx)
-  if(bot.__eq__("VerificationBot")):
-    await VerificationBot.help(ctx)
+  if(bot.__eq__("warningBot")):
+    await warningBot.help(ctx)
+  if(bot.__eq__("verificationBot")):
+    await verificationBot.help(ctx)
 
 ##BOT 3: ROLES
 @bot.command()
 async def newRoleMessage(ctx):
-  RolesBot.addNewRolesMessage(ctx)
+  rolesBot.addNewRolesMessage(ctx)
 
 @bot.command(name='numgame')
 async def numgame(ctx):
-
-    def check(message):
-        print(f"{message.author} {ctx.message.author} {ctx.channel} {message.channel}")
-        return message.author.__eq__(ctx.message.author) and message.channel.__eq__(ctx.channel)
   ##Get the chosen channel
     await ctx.send('Hey there! Please send me in which channel you want the message to be in.')
-    msg = await bot.wait_for('message', check = check, timeout=30)
+    msg = await bot.wait_for('message', timeout=30)
     #bot.get_channel(logChannelId)
     chosenChannel = bot.get_channel(int(msg.content.split('#')[1].split('>')[0]))
     print(chosenChannel)
@@ -145,22 +140,22 @@ async def numgame(ctx):
 ##Get the chosen title and description of a the message.
     await ctx.send('Fantastisch. Stuur nu je titel en beschrijving door van je bericht op de volgende manier: titel | beschrijving')
     msg = await bot.wait_for('message', timeout=30)
-    try:
-      titDescr = msg.content.split('|')
-      chosenTitel = titDescr[0]
-      chosenDescription = titDescr[1]
-    except IndexError:
-      ctx.send("De syntax van jouw bericht klopt niet, probeer het opnieuw vanaf het begin. Dankje.")
+    titDescr = msg.content.split('|')
+    chosenTitel = titDescr[0]
+    chosenDescription = titDescr[1]
 
 ##now await the right emojis and roles
 
 
 
 
-
+##save everything
     await ctx.send('Super! Geef nu alle rollen die moeten toegevoegd worden aan het bericht. Doe dit op de volgende manier -> Stuur mij de naam van de rol en reageer het juiste emoji op je bericht. Eens je klaar bent stuur done ')
     roles = []
     while not msg.content.__eq__("done"):
+
+      def check(message):
+        message.author == ctx.message.author and message.channel == ctx.channel
       
       msg = await bot.wait_for('message', check = check, timeout=30)
 
@@ -178,7 +173,7 @@ async def numgame(ctx):
       else:
         roleMessage = []
         roleMessage.append(reaction)
-        roleMessage.append(msg.content)
+        roleMessage.append(msg)
         roles.append(roleMessage)
       print(roles)
 
@@ -187,45 +182,12 @@ async def numgame(ctx):
     embed = discord.Embed(title = chosenTitel, description = chosenDescription, colour = discord.Colour.green())
 
     message = await chosenChannel.send(embed = embed)
-    ##save everything
+    
     for word in roles:
       (reaction, role) = (word)
       await message.add_reaction(reaction)
       async with aiofiles.open(f"{message.id}.txt", mode="a") as file:
-          await file.write(f"{reaction.emoji} {role}")
-
-
-@bot.event
-async def on_reaction_add(reaction, user):
-  roleAdded = False
-  if bot != user:
-    if os.path.isfile(f'{reaction.message.id}.txt'):
-
-      try:
-        async with aiofiles.open(f"{reaction.message.id}.txt", mode="r") as file:
-          lines = await file.readlines()
-          
-          for line in lines:
-            print(lines)
-            (firstWord, rest) = line.split(maxsplit=1)
-            if reaction.emoji in line:
-              print(rest)
-              role = discord.utils.get(reaction.message.guild.roles, name=rest)
-              print(role)
-              await user.add_roles(role)
-              roleAdded = True
-          
-          if roleAdded:
-            logEmbed = discord.Embed(title = "Role added", description= f"{user} had a role added.\n Role {role}\n", colour = discord.Colour.green())
-            await bot.get_channel(logChannelId).send(embed = logEmbed)
-
-      except FileNotFoundError:
-        print(FileNotFoundError)
-        
-    else:
-      print("Message isnt in reactionfile")
-
-
+          await file.write(f"{reaction.emoji} {role}\n")
 
 ##AUTOWARNINGS
 @bot.event
@@ -242,7 +204,7 @@ async def on_message(message):
               print(word)
               print(messageWord)
               await message.reply(f'{message.author.mention}, je hebt een woord gebruikt van de Bad Word List. Het is niet toegestaan om dit woord te gebruiken, daarom krijg je een warning. Denk je dat dit bericht een bug is, type $bugs.')
-              await WarningBot.warn(message, bot, message.channel, message.author, "Taalgebruik")
+              await warningBot.warn(message, bot, message.channel, message.author, "Taalgebruik")
       except KeyError:
         await message.channel.send()
       await bot.process_commands(message)

@@ -1,0 +1,15 @@
+Als admin wil ik users handmatig kunnen waarschuwing geven bij slecht gedrag om snel bij te kunnen sturen.
+
+Als admin wil ik dat er automatisch waarschuwingen worden gegeven bij specifieke woorden om minder overhead te hebben.
+
+Als admin wil ik alle openstaande waarschuwing (van een persoon) kunnen clearen.
+
+Als admin wil ik een specifieke waarschuwing kunnen deleten.
+
+Als user wil ik mijn account kunnen verifiëren op de server om te tonen dat ik een echte user ben.
+
+Als admin wil ik dat nieuwe users automatisch een mail krijgen ter verificatie om minder overhead te hebben.
+
+Als admin wil ik dat users zichzelf rollen kunnen toewijzen om minder overhead te hebben.
+
+Als admin wil ik logs kunnen opvragen om makkelijk te kunnen controleren wat er gebeurd op de server.
