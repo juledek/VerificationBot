@@ -1,0 +1,14 @@
+Work OOP wherever possible and whenever serialization is needed (Users, Warnings).
+
+Documentation:
+
+-Code should be self-documentation for the 'what' and 'how'.
+-If code is not clear, explain the line.
+-Separate code in blocks and comment what that block achieves.
+-Use comments to explain the 'why'.
+
+
+Commands:
+-Each command gets its own class.
+-Place each command in the commands folder and within the folder for its group (group per intended user such as user or admin).
+-Work async with promises.
