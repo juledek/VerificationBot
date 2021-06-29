@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "repl_python3_VerificationBot"
+name = "repl_python3_VerificationBot-2"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["juledek <<>>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-discord = "^1.0.1"
-replit = "^3.1.0"
 aiofiles = "^0.7.0"
+discord = "^1.7.3"
+replit = "^3.1.0"
 
 [tool.poetry.dev-dependencies]
 
