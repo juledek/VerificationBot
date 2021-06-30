@@ -5,6 +5,7 @@ class User {
   }
 
   addWarning(reason) {
+    console.log("DerpUser");
     this.warnings.push(new Warning(reason));
   }
 }
